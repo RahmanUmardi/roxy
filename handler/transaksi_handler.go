@@ -44,14 +44,32 @@ func (t *TransaksiHandler) CreateTransaksiHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
+	respone := gin.H{
 		"message": "Transaksi berhasil dibuat",
 		"data": gin.H{
 			"id_trans":          idTransaksi,
 			"tanggal_transaksi": tglTrans.Format("2006-01-02"),
+			"total":             header.Total,
 			"detail":            req.Detail,
 		},
-	})
+	}
+
+	c.JSON(http.StatusCreated, respone)
+}
+
+func (t *TransaksiHandler) GetAllTransaksiHandler(c *gin.Context) {
+	transaksi, err := t.TransaksiUsecase.GetAllTransaksi()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	response := gin.H{
+		"message": "Succes get all transaksi",
+		"data":    transaksi,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (t *TransaksiHandler) GetTransaksiHandler(c *gin.Context) {
@@ -64,16 +82,20 @@ func (t *TransaksiHandler) GetTransaksiHandler(c *gin.Context) {
 	}
 
 	response := gin.H{
-		"header": header,
-		"detail": detail,
+		"message": "Succes get transaksi by id" + idTrans,
+		"header":  header,
+		"detail":  detail,
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
 func (t *TransaksiHandler) UpdateTransaksiHandler(c *gin.Context) {
+	idTrans := c.Param("id")
 	var req struct {
-		Header entity.TransaksiHeader   `json:"header"`
+		Header struct {
+			TanggalTransaksi string `json:"tanggal_transaksi"`
+		} `json:"header"`
 		Detail []entity.TransaksiDetail `json:"detail"`
 	}
 
@@ -82,12 +104,17 @@ func (t *TransaksiHandler) UpdateTransaksiHandler(c *gin.Context) {
 		return
 	}
 
-	if req.Header.IDTrans == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID transaksi tidak boleh kosong"})
+	tglTrans, err := time.Parse("2006-01-02", req.Header.TanggalTransaksi)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format"})
 		return
 	}
 
-	err := t.TransaksiUsecase.UpdateTransaksiWithDetail(req.Header, req.Detail)
+	header := entity.TransaksiHeader{
+		TglTrans: tglTrans,
+	}
+
+	_, _, err = t.TransaksiUsecase.UpdateTransaksiWithDetail(idTrans, header, req.Detail)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -110,6 +137,7 @@ func (t *TransaksiHandler) DeleteTransaksiHandler(c *gin.Context) {
 
 func (t *TransaksiHandler) Route() {
 	t.rg.POST(config.PostTransaksi, t.CreateTransaksiHandler)
+	t.rg.GET(config.GetTransaksiList, t.GetAllTransaksiHandler)
 	t.rg.GET(config.GetTransaksiByID, t.GetTransaksiHandler)
 	t.rg.PUT(config.PutTransaksi, t.UpdateTransaksiHandler)
 	t.rg.DELETE(config.DeleteTransaksi, t.DeleteTransaksiHandler)

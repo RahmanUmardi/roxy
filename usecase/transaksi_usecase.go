@@ -9,13 +9,15 @@ import (
 
 type TransaksiUsecase interface {
 	CreateTransaksiWithDetail(transaksi entity.TransaksiHeader, details []entity.TransaksiDetail) (string, error)
+	GetAllTransaksi() ([]entity.TransaksiHeader, error)
 	GetTransaksiByID(idTrans string) (entity.TransaksiHeader, []entity.TransaksiDetail, error)
-	UpdateTransaksiWithDetail(transaksi entity.TransaksiHeader, details []entity.TransaksiDetail) error
+	UpdateTransaksiWithDetail(idTrans string, transaksi entity.TransaksiHeader, details []entity.TransaksiDetail) (entity.TransaksiHeader, []entity.TransaksiDetail, error)
 	DeleteTransaksi(idTrans string) error
 }
 
 type transaksiUsecase struct {
 	TransaksiRepo repository.TransaksiRepository
+	barangRepo    repository.MstBarangRepository
 }
 
 func (t *transaksiUsecase) CreateTransaksiWithDetail(transaksi entity.TransaksiHeader, details []entity.TransaksiDetail) (string, error) {
@@ -28,10 +30,16 @@ func (t *transaksiUsecase) CreateTransaksiWithDetail(transaksi entity.TransaksiH
 		if details[i].Qty <= 0 {
 			return "", errors.New("qty harus lebih dari 0")
 		}
-		if details[i].Harga <= 0 {
-			return "", errors.New("harga harus lebih dari 0")
+
+		barang, err := t.barangRepo.GetByID(details[i].IDBarang)
+		if err != nil {
+			return "", fmt.Errorf("gagal mendapatkan data barang dengan ID %s: %v", details[i].IDBarang, err)
 		}
+
+		details[i].Harga = float64(barang.Harga)
+
 		details[i].Subtotal = details[i].Harga * float64(details[i].Qty)
+
 		total += details[i].Subtotal
 	}
 
@@ -47,6 +55,10 @@ func (t *transaksiUsecase) CreateTransaksiWithDetail(transaksi entity.TransaksiH
 	return idTransaksi, nil
 }
 
+func (t *transaksiUsecase) GetAllTransaksi() ([]entity.TransaksiHeader, error) {
+	return t.TransaksiRepo.GetAllTransaksi()
+}
+
 func (t *transaksiUsecase) GetTransaksiByID(idTrans string) (entity.TransaksiHeader, []entity.TransaksiDetail, error) {
 	transaksi, details, err := t.TransaksiRepo.GetTransaksiByID(idTrans)
 	if err != nil {
@@ -56,44 +68,39 @@ func (t *transaksiUsecase) GetTransaksiByID(idTrans string) (entity.TransaksiHea
 	return transaksi, details, nil
 }
 
-func (t *transaksiUsecase) UpdateTransaksiWithDetail(header entity.TransaksiHeader, details []entity.TransaksiDetail) error {
-	oldTransaksi, _, err := t.TransaksiRepo.GetTransaksiByID(header.IDTrans)
+func (t *transaksiUsecase) UpdateTransaksiWithDetail(idTrans string, header entity.TransaksiHeader, details []entity.TransaksiDetail) (entity.TransaksiHeader, []entity.TransaksiDetail, error) {
+	oldTransaksi, _, err := t.TransaksiRepo.GetTransaksiByID(idTrans)
 	if err != nil {
-		return fmt.Errorf("Message: %s, ID transaksi: %s", err.Error(), header.IDTrans)
-	}
-
-	if header.IDTrans != oldTransaksi.IDTrans {
-		return errors.New("ID transaksi tidak boleh diubah")
+		return header, details, fmt.Errorf("Message: %s, ID transaksi: %s", err.Error(), header.IDTrans)
 	}
 
 	if header.TglTrans.IsZero() {
 		header.TglTrans = oldTransaksi.TglTrans
 	}
-	if header.Total == 0 {
-		header.Total = oldTransaksi.Total
-	}
 
 	var total float64
 	for i := range details {
 		if details[i].Qty <= 0 {
-			return errors.New("qty harus lebih dari 0")
-		}
-		if details[i].Harga <= 0 {
-			return errors.New("harga harus lebih dari 0")
+			return header, details, fmt.Errorf("qty harus lebih dari 0")
 		}
 
-		details[i].Subtotal = details[i].Harga * float64(details[i].Qty)
+		barang, err := t.barangRepo.GetByID(details[i].IDBarang)
+		if err != nil {
+			return header, details, fmt.Errorf("gagal mendapatkan data barang dengan ID %s: %v", details[i].IDBarang, err)
+		}
+
+		details[i].Subtotal = float64(barang.Harga) * float64(details[i].Qty)
 		total += details[i].Subtotal
 	}
 
 	header.Total = total
 
-	err = t.TransaksiRepo.UpdateTransaksiWithDetail(header, details)
+	header, details, err = t.TransaksiRepo.UpdateTransaksiWithDetail(header, details)
 	if err != nil {
-		return err
+		return header, details, err
 	}
 
-	return nil
+	return header, details, nil
 }
 
 func (t *transaksiUsecase) DeleteTransaksi(idTrans string) error {
@@ -110,8 +117,9 @@ func (t *transaksiUsecase) DeleteTransaksi(idTrans string) error {
 	return nil
 }
 
-func NewTransaksiUsecase(transaksiRepo repository.TransaksiRepository) TransaksiUsecase {
+func NewTransaksiUsecase(transaksiRepo repository.TransaksiRepository, barangRepo repository.MstBarangRepository) TransaksiUsecase {
 	return &transaksiUsecase{
 		TransaksiRepo: transaksiRepo,
+		barangRepo:    barangRepo,
 	}
 }

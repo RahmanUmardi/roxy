@@ -48,7 +48,7 @@ func NewServer() *Server {
 	transaksiRepo := repository.NewTransaksiRepository(db)
 	//inject dependencies usecase layer
 	barangUc := usecase.NewBarangUseCase(barangRepo)
-	transaksiUc := usecase.NewTransaksiUsecase(transaksiRepo)
+	transaksiUc := usecase.NewTransaksiUsecase(transaksiRepo, barangRepo)
 
 	engine := gin.Default()
 	host := fmt.Sprintf(":%s", cfg.ApiPort)

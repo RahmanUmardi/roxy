@@ -150,14 +150,11 @@
 		{
 			"name": "create transaksi",
 			"request": {
-				"auth": {
-					"type": "inherit"
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"header\": {\r\n        \"tanggal_transaksi\": \"2024-12-04\"\r\n    },\r\n    \"detail\": [\r\n        {\r\n            \"id_barang\": \"BR-0004\",\r\n            \"qty\": 2,\r\n            \"harga\": 50000\r\n        }\r\n    ]\r\n}\r\n",
+					"raw": "{\r\n    \"header\": {\r\n        \"tanggal_transaksi\": \"2024-12-07\"\r\n    },\r\n    \"detail\": [\r\n        {\r\n            \"id_barang\": \"BR-0004\",\r\n            \"qty\": 2\r\n        },\r\n        {\r\n            \"id_barang\": \"BR-0004\",\r\n            \"qty\": 3\r\n        }\r\n    ]\r\n}\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -240,7 +237,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"header\": {\r\n    \"id_trans\": \"TR-0006\",\r\n    \"tanggal_transaksi\": \"2024-12-04\",\r\n    \"total\": 100000\r\n  },\r\n  \"detail\": [\r\n    {\r\n      \"id_trans_detail\": \"TD-0005\",\r\n      \"id_barang\": \"BR-0004\",\r\n      \"qty\": 2,\r\n      \"harga\": 50000,\r\n      \"subtotal\": 100000\r\n    }\r\n  ]\r\n}\r\n",
+					"raw": "{\r\n    \"header\": {\r\n        \"tanggal_transaksi\": \"2024-12-08\"\r\n    },\r\n    \"detail\": [\r\n        {\r\n            \"id_barang\": \"BR-0005\",\r\n            \"qty\": 2\r\n        },\r\n        {\r\n            \"id_barang\": \"BR-0004\",\r\n            \"qty\": 3\r\n        }\r\n    ]\r\n}\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -248,7 +245,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/api/v1/transaksi/TR-0006",
+					"raw": "http://localhost:8080/api/v1/transaksi/TR-0008",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -258,7 +255,28 @@
 						"api",
 						"v1",
 						"transaksi",
-						"TR-0006"
+						"TR-0008"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetAllTransaksi",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/transaksis",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"transaksis"
 					]
 				}
 			},

@@ -10,6 +10,7 @@ const (
 	DeleteBarang  = "/barang/:id"
 	// barang route
 	PostTransaksi    = "/transaksi"
+	GetTransaksiList = "/transaksis"
 	GetTransaksiByID = "/transaksi/:id"
 	PutTransaksi     = "/transaksi/:id"
 	DeleteTransaksi  = "/transaksi/:id"
